@@ -47,6 +47,31 @@ class ApiClient(
         builder.utcOffset
     )
 
+    ////////////////////////////////////////////////////////////
+
+    fun fork(block: Builder.() -> Unit): ApiClient = Builder.from(this).apply(block).build()
+
+    class Builder() {
+        var throttle: Duration = Duration.ofMillis(1000)
+        var userAgent: String = "com.danneu.reddit:0.0.1"
+        var proxy: Proxy? = null
+        // If you already know the offset, you can pass it in so the client can skip the fetch.
+        var utcOffset: Duration? = null
+
+        fun build() = ApiClient(this)
+
+        companion object {
+            fun from(client: ApiClient): Builder = Builder().apply {
+                throttle = client.throttle
+                userAgent = client.userAgent
+                proxy = client.proxy
+                utcOffset = client.utcOffset
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////
+
     fun submissionAt(subreddit: String, submissionId: String): Submission? {
         val url = urlOf("https://api.reddit.com/r/$subreddit/comments/$submissionId", listOf(
             "limit" to 1,
@@ -261,29 +286,6 @@ class ApiClient(
             }
 
             override fun next(): Submission = buffer.removeAt(0)
-        }
-    }
-
-    ////////////////////////////////////////////////////////////
-
-    fun fork(block: Builder.() -> Unit): ApiClient = Builder.from(this).apply(block).build()
-
-    class Builder() {
-        var throttle: Duration = Duration.ofMillis(1000)
-        var userAgent: String = "com.danneu.reddit:0.0.1"
-        var proxy: Proxy? = null
-        // If you already know the offset, you can pass it in so the client can skip the fetch.
-        var utcOffset: Duration? = null
-
-        fun build() = ApiClient(this)
-
-        companion object {
-            fun from(client: ApiClient): Builder = Builder().apply {
-                throttle = client.throttle
-                userAgent = client.userAgent
-                proxy = client.proxy
-                utcOffset = client.utcOffset
-            }
         }
     }
 }

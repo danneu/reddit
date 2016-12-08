@@ -55,6 +55,8 @@ fun main(args: Array<String>) {
 
 ### Crawl all comments in a subreddit
 
+Iterates comments depth-first.
+
 ``` kotlin
 import com.danneu.reddit.ApiClient
 
