@@ -6,21 +6,18 @@ import com.beust.klaxon.int
 import com.beust.klaxon.long
 import com.beust.klaxon.obj
 import com.beust.klaxon.string
-import com.danneu.reddit.ThingPrefix.Link
 import com.danneu.reddit.interceptors.EnsureUserAgent
 import com.danneu.reddit.interceptors.Retry
 import com.danneu.reddit.interceptors.Throttle
 import com.google.common.collect.Iterators
 import okhttp3.OkHttpClient
-import org.jsoup.Jsoup
 import java.net.URI
-import java.net.URISyntaxException
 import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 
 
-class Submission(val json: JsonObject, val subredditName: String, override val id: String) : RedditThing(Link) {
+class Submission(val json: JsonObject, val subredditName: String, override val id: String) : Thing(Thing.Prefix.Link) {
     override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
 
     fun title(): String = json.string("title")!!
@@ -41,13 +38,13 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
 }
 
 
-class Comment(val json: JsonObject, val submissionTitle: String) : RedditThing(ThingPrefix.Comment) {
+class Comment(val json: JsonObject, val submissionTitle: String) : Thing(Thing.Prefix.Comment) {
     override val id: String = json.string("id")!!
     override fun url() = "https://www.reddit.com/r/${subredditName()}/comments/${submissionId()}//$id"
     fun text(): String = json.string("body")!!.trim()
     fun html(): String = json.string("body_html")!!
     fun subredditName(): String = json.string("subreddit")!!
-    fun submissionId(): String = ThingPrefix.strip(json.string("link_id")!!)
+    fun submissionId(): String = Thing.Prefix.strip(json.string("link_id")!!)
 
     fun urls(): List<URI> {
         return HtmlParser.urls(html())
@@ -90,7 +87,7 @@ sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
 
         override fun iterator(): Iterator<Comment> {
             return if (count() == 0) {
-                val commentId = ThingPrefix.strip(parentId()) // t1_abc -> abc
+                val commentId = Thing.Prefix.strip(parentId()) // t1_abc -> abc
                 apiClient.commentsOf(submission.subredditName, submissionId = submission.id, commentId = commentId)
                     // Drop first item since it's a duplicate of our last item
                     // TODO: Could maybe just drop the first childId in our MoreChildren request?
