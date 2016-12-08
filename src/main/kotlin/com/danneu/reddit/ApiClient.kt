@@ -12,14 +12,17 @@ import com.danneu.reddit.interceptors.Throttle
 import okhttp3.OkHttpClient
 import java.time.Duration
 import java.time.Instant
+import java.net.Proxy
 
 
 class ApiClient(
     userAgent: String = "com.danneu.reddit:0.0.1",
     throttle: Duration = Duration.ofMillis(1000),
+    proxy: Proxy? = null,
     val utcOffset: Duration? = null
 ) {
     val client: OkHttpClient = _sharedClient.newBuilder()
+        .proxy(proxy ?: Proxy.NO_PROXY)
         .addInterceptor(EnsureUserAgent(userAgent))
         .addInterceptor(Throttle(throttle))
         .addInterceptor(Retry()) // this must be the final interceptor

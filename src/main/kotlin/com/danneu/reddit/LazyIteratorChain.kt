@@ -26,6 +26,8 @@ abstract class LazyIteratorChain<T>: Iterator<T> {
     var currIter: Iterator<T> = Collections.emptyIterator()
     var count = 0
 
+    // `count` is the number of times nextIterator has been called.
+    // e.g. if count is 2, then return the 2nd iterator in the chain.
     abstract fun nextIterator(count: Int): Iterator<T>?
 
     override fun hasNext(): Boolean {

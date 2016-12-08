@@ -60,7 +60,7 @@ internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
             return when (kind) {
                 "t1" -> CommentTree(submission, data, apiClient)
                 "more" -> More(submission, data, apiClient)
-            // TODO: This should never happen, but what's the proper way to handle this anyways?
+                // TODO: This should never happen, but what's the proper way to handle this anyways?
                 else -> throw RuntimeException("Expected kind: $kind")
             }
         }
