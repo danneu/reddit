@@ -65,6 +65,16 @@ class ApiTests {
         assertNull("should return null when not found", submission)
     }
 
+    @Test
+    fun testCommentsOfSubmission() {
+        // https://www.reddit.com/r/testfixtures/comments/5gdn73/alphabet_toplevel/
+        val client = ApiClient()
+        val submission = client.submissionAt("testfixtures", "5gdn73") ?: return fail("submission was null")
+        val comments = client.commentsOf(submission).asSequence().toList()
+        assertEquals("should be able to just call commentsOf(submission)", alphabet, comments.map { it.text() })
+    }
+
+
     // URL PARSING
 
 

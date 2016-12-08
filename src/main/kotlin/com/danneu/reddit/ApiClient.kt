@@ -62,6 +62,12 @@ class ApiClient(
     }
 
 
+    // Convenience API
+    fun commentsOf(submission: Submission, commentId: String? = null, limit: Int = 100): Iterator<Comment> {
+        return commentsOf(submission.subredditName, submission.id, commentId, limit)
+    }
+
+
     // children is a list of Id36
     // submissionFullName, of course, should be a prefixed Id36
     // e.g. submissionFullName: "t3_abc", children: ["abc", "def"]
