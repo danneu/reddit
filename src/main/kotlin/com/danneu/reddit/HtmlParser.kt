@@ -6,6 +6,8 @@ import java.net.URISyntaxException
 
 
 object HtmlParser {
+    // ignores relative urls like <a href="#top"> and <a href="r/futurology">
+    //
     // sponge up comment logic between Submission and Comment
     fun urls(html: String): List<URI> {
         return Jsoup.parseBodyFragment(html, "https://www.reddit.com").let { doc ->

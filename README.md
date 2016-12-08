@@ -3,11 +3,7 @@
 
 A Reddit crawler implemented in Kotlin for consuming submissions and comments with a flattened iterator.
 
-``` kotlin
-ApiClient#submissionsOf(subreddit): Iterator<Submission>
-ApiClient#commentsOf(submission): Iterator<Comment>
-ApiClient#commentsOf(subreddit): Iterator<Comment>
-```
+The crawler's methods return `Iterator<Submission>` or `Iterator<Comment>`.
 
 Useful for consuming the entire set of submissions and comments for a subreddit.
 

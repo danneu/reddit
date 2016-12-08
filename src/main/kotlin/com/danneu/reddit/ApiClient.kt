@@ -19,6 +19,7 @@ class ApiClient(
     userAgent: String = "com.danneu.reddit:0.0.1",
     throttle: Duration = Duration.ofMillis(1000),
     proxy: Proxy? = null,
+    // If you already know the offset, you can pass it in so the client can skip the fetch.
     val utcOffset: Duration? = null
 ) {
     val client: OkHttpClient = _sharedClient.newBuilder()
@@ -29,7 +30,7 @@ class ApiClient(
         .build()
 
     companion object {
-        // all ApiClient instances share the same http client thread-pool
+        // All ApiClient instances share the same http client thread-pool
         val _sharedClient = OkHttpClient()
     }
 
