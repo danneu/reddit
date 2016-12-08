@@ -1,5 +1,5 @@
 
-# reddit-iterator
+# reddit-iterator [![Build Status](https://travis-ci.org/danneu/reddit-iterator.svg?branch=master)](https://travis-ci.org/danneu/reddit-iterator)
 
 A Reddit crawler implemented in Kotlin for consuming submissions and comments with a flattened iterator.
 
