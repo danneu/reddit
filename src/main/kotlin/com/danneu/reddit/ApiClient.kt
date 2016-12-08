@@ -33,6 +33,18 @@ class ApiClient(
         val _sharedClient = OkHttpClient()
     }
 
+    fun submissionAt(subreddit: String, submissionId: String): Submission? {
+        val url = urlOf("https://api.reddit.com/r/$subreddit/comments/$submissionId", listOf(
+            "limit" to 1,
+            "depth" to 1
+        ))
+        val response = url.get(client)
+        if (response.code() == 404) return null
+        val array = response.body().jsonArray<JsonObject>()
+        val json = array.first().obj("data")!!.array<JsonObject>("children")!!.first().obj("data")!!
+        return Submission.from(json)
+    }
+
     fun commentsOf(subreddit: String, submissionId: String, commentId: String? = null, limit: Int = 100): Iterator<Comment> {
         val base = "https://api.reddit.com/r/$subreddit/comments/$submissionId" +
             if (commentId == null) "" else "//$commentId"

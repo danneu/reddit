@@ -50,6 +50,20 @@ class ApiTests {
         )
     }
 
+    @Test
+    fun testSubmissionAt() {
+        // https://www.reddit.com/r/testfixtures/comments/5h8934/urls/
+        val submission = ApiClient().submissionAt("testfixtures", "5h8934")
+        assertEquals("should fetch individual submission", "urls", submission?.title())
+    }
+
+    @Test
+    // TODO: Need to test all API functions for what happens on 404 vs error.
+    fun testSubmissionAt404() {
+        // https://www.reddit.com/r/testfixtures/comments/5h8934/urls/
+        val submission = ApiClient().submissionAt("testfixtures", "xxxxxx")
+        assertNull("should return null when not found", submission)
+    }
 
     // URL PARSING
 
