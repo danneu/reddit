@@ -17,51 +17,6 @@ import java.time.Instant
 import java.util.Collections
 
 
-class Submission(val json: JsonObject, val subredditName: String, override val id: String) : Thing(Thing.Prefix.Link) {
-    override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
-
-    fun title(): String = json.string("title")!!
-
-    fun urls(): List<URI> {
-        // selftext is always a string, selftext_html is string | null.
-        val html = json.string("selftext_html") ?: return emptyList()
-        return HtmlParser.urls(html)
-    }
-
-    companion object {
-        fun from(json: JsonObject): Submission {
-            val id = json.string("id")!!
-            val subredditName = json.string("subreddit")!!
-            return Submission(json, subredditName, id)
-        }
-    }
-}
-
-
-class Comment(val json: JsonObject, val submissionTitle: String) : Thing(Thing.Prefix.Comment) {
-    override val id: String = json.string("id")!!
-    override fun url() = "https://www.reddit.com/r/${subredditName()}/comments/${submissionId()}//$id"
-    fun text(): String = json.string("body")!!.trim()
-    fun html(): String = json.string("body_html")!!
-    fun subredditName(): String = json.string("subreddit")!!
-    fun submissionId(): String = Thing.Prefix.strip(json.string("link_id")!!)
-
-    fun urls(): List<URI> {
-        return HtmlParser.urls(html())
-    }
-
-    override fun toString(): String {
-        return "Comment{id = $id, url = ${url()}, text=\"${text().replace("\n", "").take(70)}\""
-    }
-
-    companion object {
-        fun from(submissionTitle: String, json: JsonObject): Comment {
-            return Comment(json, submissionTitle)
-        }
-    }
-}
-
-
 sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
     // kind == t1
     class CommentTree(val submission: Submission, val json: JsonObject, apiClient: ApiClient) : Node(apiClient) {
