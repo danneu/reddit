@@ -12,6 +12,9 @@ import com.danneu.reddit.interceptors.Retry
 import com.danneu.reddit.interceptors.Throttle
 import com.google.common.collect.Iterators
 import okhttp3.OkHttpClient
+import org.jsoup.Jsoup
+import java.net.URI
+import java.net.URISyntaxException
 import java.time.Duration
 import java.time.Instant
 import java.util.Collections
@@ -21,6 +24,12 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
     override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
 
     fun title(): String = json.string("title")!!
+
+    fun urls(): List<URI> {
+        // selftext is always a string, selftext_html is string | null.
+        val html = json.string("selftext_html") ?: return emptyList()
+        return HtmlParser.urls(html)
+    }
 
     companion object {
         fun from(json: JsonObject): Submission {
@@ -39,6 +48,10 @@ class Comment(val json: JsonObject, val submissionTitle: String) : RedditThing(T
     fun html(): String = json.string("body_html")!!
     fun subredditName(): String = json.string("subreddit")!!
     fun submissionId(): String = ThingPrefix.strip(json.string("link_id")!!)
+
+    fun urls(): List<URI> {
+        return HtmlParser.urls(html())
+    }
 
     override fun toString(): String {
         return "Comment{id = $id, url = ${url()}, text=\"${text().replace("\n", "").take(70)}\""
