@@ -16,11 +16,11 @@ import java.net.Proxy
 
 
 class ApiClient(
-    userAgent: String = "com.danneu.reddit:0.0.1",
-    throttle: Duration = Duration.ofMillis(1000),
-    proxy: Proxy? = null,
+    val throttle: Duration,
+    val userAgent: String,
+    val proxy: Proxy?,
     // If you already know the offset, you can pass it in so the client can skip the fetch.
-    val utcOffset: Duration? = null
+    val utcOffset: Duration?
 ) {
     val client: OkHttpClient = _sharedClient.newBuilder()
         .proxy(proxy ?: Proxy.NO_PROXY)
@@ -29,10 +29,23 @@ class ApiClient(
         .addInterceptor(Retry()) // this must be the final interceptor
         .build()
 
+    // When initialized without args, return default client
+    constructor(): this(Builder())
+
+    // Can also be initialized with lambda that gets passed to builder
+    constructor(block: Builder.() -> Unit): this(Builder().apply(block))
+
     companion object {
         // All ApiClient instances share the same http client thread-pool
         val _sharedClient = OkHttpClient()
     }
+
+    private constructor(builder: Builder): this(
+        builder.throttle,
+        builder.userAgent,
+        builder.proxy,
+        builder.utcOffset
+    )
 
     fun submissionAt(subreddit: String, submissionId: String): Submission? {
         val url = urlOf("https://api.reddit.com/r/$subreddit/comments/$submissionId", listOf(
@@ -248,6 +261,29 @@ class ApiClient(
             }
 
             override fun next(): Submission = buffer.removeAt(0)
+        }
+    }
+
+    ////////////////////////////////////////////////////////////
+
+    fun fork(block: Builder.() -> Unit): ApiClient = Builder.from(this).apply(block).build()
+
+    class Builder() {
+        var throttle: Duration = Duration.ofMillis(1000)
+        var userAgent: String = "com.danneu.reddit:0.0.1"
+        var proxy: Proxy? = null
+        // If you already know the offset, you can pass it in so the client can skip the fetch.
+        var utcOffset: Duration? = null
+
+        fun build() = ApiClient(this)
+
+        companion object {
+            fun from(client: ApiClient): Builder = Builder().apply {
+                throttle = client.throttle
+                userAgent = client.userAgent
+                proxy = client.proxy
+                utcOffset = client.utcOffset
+            }
         }
     }
 }

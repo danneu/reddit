@@ -83,3 +83,26 @@ fun main(args: Array<String>) {
 }
 ```
 
+### Get a new ApiClient based on an existing one
+
+`ApiClient#fork()` returns a new ApiClient with the same configuration as the original one. Pass in a builder
+lambda to customize the copy.
+
+``` kotlin
+import com.danneu.reddit.ApiClient
+import java.net.Proxy
+import java.time.Duration
+
+fun main(args: Array<String>) {
+    val baseClient = ApiClient {
+        proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress("1.2.3.4", 8080))
+    }
+
+    val newClient = baseClient.fork {
+        throttle = Duration.ofSeconds(2)
+    }
+}
+```
+
+`newClient` uses the same proxy as `baseClient`, but it waits two seconds before each request instead of the
+default one second.
