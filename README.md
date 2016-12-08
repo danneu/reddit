@@ -92,17 +92,18 @@ lambda to customize the copy.
 import com.danneu.reddit.ApiClient
 import java.net.Proxy
 import java.time.Duration
+import java.net.InetSocketAddress
 
 fun main(args: Array<String>) {
-    val baseClient = ApiClient {
+    val client1 = ApiClient {
         proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress("1.2.3.4", 8080))
     }
 
-    val newClient = baseClient.fork {
+    val client2 = client1.fork {
         throttle = Duration.ofSeconds(2)
     }
 }
 ```
 
-`newClient` uses the same proxy as `baseClient`, but it waits two seconds before each request instead of the
+`client2` uses the same proxy as `client1`, but it waits two seconds before each request instead of the
 default one second.

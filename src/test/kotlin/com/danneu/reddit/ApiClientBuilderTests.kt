@@ -3,7 +3,6 @@ package com.danneu.reddit
 
 import org.junit.Assert.*
 import org.junit.Test
-import java.time.Duration
 
 
 class ApiClientBuilderTests {
