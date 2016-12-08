@@ -23,6 +23,26 @@ TODO
 
 ## Usage
 
+### Crawl latest comments across all subreddits
+
+The server only responds with the latest 1,000 comments, but since you hit CDN cache, this endpoint will paginate
+10,000+ comments.
+
+Though due to the cache, the farther you paginate, the more sparse the comments become. For instance, fewer
+comments per hour.
+
+``` kotlin
+import com.danneu.reddit.ApiClient
+
+fun main(args: Array<String>) {
+    val client = ApiClient()
+
+    client.recentComments().forEach { comment ->
+        println(comment)
+    }
+}
+```
+
 ### Crawl all submissions in a subreddit
 
 ``` kotlin

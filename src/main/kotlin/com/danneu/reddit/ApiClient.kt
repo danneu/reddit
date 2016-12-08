@@ -3,6 +3,7 @@ package com.danneu.reddit
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.array
 import com.beust.klaxon.int
+import com.beust.klaxon.long
 import com.beust.klaxon.obj
 import com.beust.klaxon.string
 import com.danneu.reddit.ThingPrefix.Link
@@ -17,7 +18,7 @@ import java.util.Collections
 
 
 class Submission(val json: JsonObject, val subredditName: String, override val id: String) : RedditThing(Link) {
-    override fun url(): String = ""
+    override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
 
     fun title(): String = json.string("title")!!
 
@@ -31,11 +32,31 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
 }
 
 
+class Comment(val json: JsonObject, val submissionTitle: String) : RedditThing(ThingPrefix.Comment) {
+    override val id: String = json.string("id")!!
+    override fun url() = "https://www.reddit.com/r/${subredditName()}/comments/${submissionId()}//$id"
+    fun text(): String = json.string("body")!!.trim()
+    fun html(): String = json.string("body_html")!!
+    fun subredditName(): String = json.string("subreddit")!!
+    fun submissionId(): String = ThingPrefix.strip(json.string("link_id")!!)
+
+    override fun toString(): String {
+        return "Comment{id = $id, url = ${url()}, text=\"${text().replace("\n", "").take(70)}\""
+    }
+
+    companion object {
+        fun from(submissionTitle: String, json: JsonObject): Comment {
+            return Comment(json, submissionTitle)
+        }
+    }
+}
+
+
 sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
     // kind == t1
     class CommentTree(val submission: Submission, val json: JsonObject, apiClient: ApiClient) : Node(apiClient) {
         override fun iterator(): Iterator<Comment> {
-            val iterator1 = Iterators.singletonIterator(Comment(json))
+            val iterator1 = Iterators.singletonIterator(Comment(json, submission.title()))
             val iterator2 = if (json.tryString("replies")?.isEmpty() ?: false) {
                 Collections.emptyIterator<Comment>()
             } else {
@@ -88,12 +109,6 @@ sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
 }
 
 
-class Comment(val json: JsonObject) : RedditThing(ThingPrefix.Comment) {
-    override val id: String = json.string("id")!!
-    override fun url(): String = ""
-    fun text(): String = json.string("body")!!
-    fun html(): String = json.string("body_html")!!
-}
 
 
 
@@ -146,9 +161,71 @@ class ApiClient(
     }
 
 
-    // TODO: Implement API hit
+    fun recentComments(limit: Int = 100, crawl: Boolean = true): Iterator<Comment> {
+        var after: String? = null
+        val buffer = mutableListOf<Comment>()
+        // we set this whenever a response comes back without an `after`.
+        // this way we can end the iterator once the buffer is drained since there
+        // are no more pages to paginate.
+        var lastPage = false
+
+        return object : Iterator<Comment> {
+            override fun hasNext(): Boolean {
+                // we can serve from the buffer
+                if (buffer.isNotEmpty()) return true
+
+                // buffer is drained and there are no more paginations
+                if (lastPage) return false
+
+                // refill the buffer with the next paginated request
+                val url = urlOf("https://api.reddit.com/comments", listOf(
+                    "limit" to limit,
+                    "after" to after
+                ))
+
+                val body = url.get(client).body().jsonObject()
+                buffer.addAll(body.obj("data")!!.array<JsonObject>("children")!!.map { obj ->
+                    // unlike some other endpoints, comments returned by this one include the submission title
+                    // in the comment json
+                    val data = obj.obj("data")!!
+                    val submissionTitle = data.string("link_title")!!
+                    Comment.from(submissionTitle, data)
+                })
+
+                // if call-site tells us not to paginate, then end after buffer is drained
+                if (!crawl) {
+                    return buffer.isNotEmpty()
+                }
+
+                // update `after` for the next pagination
+                after = body.obj("data")!!.string("after")
+
+                if (after == null) {
+                    lastPage = false
+                }
+
+                // we're done if the buffer is still empty
+                return buffer.isNotEmpty()
+            }
+
+            override fun next(): Comment = buffer.removeAt(0)
+        }
+    }
+
+
+    // grabs the latest comment to determine reddit's offset from UTC.
+    //
+    // i.e. this is the duration you must add to a UTC timestamp to get reddit's server time.
+    // for instance, reddit's cloudsearch api watns timestamps in reddit's time rather than utc, so
+    // you can use this offset to do the conversion.
     fun fetchUtcOffset(): Duration {
-        return Duration.ofHours(8)
+        val iterator = recentComments(limit = 1, crawl = false)
+
+        // TODO: do something real
+        if (!iterator.hasNext()) throw RuntimeException("weird, reddit api returned no results")
+
+        val json = iterator.next().json
+        return Duration.ofSeconds(json.long("created")!! - json.long("created_utc")!!)
     }
 
 
@@ -250,12 +327,19 @@ class ApiClient(
 
 
 fun main(args: Array<String>) {
+    val offset = ApiClient().fetchUtcOffset()
+    println("offset = ${offset.toHours()} hours")
+
+    ApiClient().recentComments().forEach { comment ->
+        println(comment)
+    }
+
 //    ApiClient().submissionsOf("testfixtures", interval = Duration.ofDays(150)).forEach { submission ->
 //        println("- ${submission.id} ${submission.title()}")
 //    }
 
 //    ApiClient().commentsOf("testfixtures", "5g3272", limit = 2).forEach { comment ->
-//        println("${comment.id}: ${comment.text()}")
+//        println(comment)
 //    }
 
 //    var count = 0
@@ -265,18 +349,15 @@ fun main(args: Array<String>) {
 //    }
 //    println("count: $count")
 
-    val client = ApiClient()
-
-    client.submissionsOf("politics").forEach { submission ->
-        println("[submission] ${submission.id}: ${submission.title()} ")
-        var comments = 0
-        client.commentsOf(submission.subredditName, submissionId = submission.id).forEach { comment ->
-            comments += 1
-        }
-        println("- comments found: $comments. https://www.reddit.com/r/${submission.subredditName}/comments/${submission.id})")
-    }
-
-
+//    val client = ApiClient()
+//    client.submissionsOf("politics").forEach { submission ->
+//        println("[submission] ${submission.id}: ${submission.title()} ")
+//        var comments = 0
+//        client.commentsOf(submission.subredditName, submissionId = submission.id).forEach { comment ->
+//            comments += 1
+//        }
+//        println("- comments found: $comments. https://www.reddit.com/r/${submission.subredditName}/comments/${submission.id})")
+//    }
 }
 
 
