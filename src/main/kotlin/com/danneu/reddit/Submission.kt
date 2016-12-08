@@ -16,6 +16,10 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
         return HtmlParser.urls(html)
     }
 
+    override fun toString(): String {
+        return "Submission{id = $id, url = ${url()}, title=\"${title()}\""
+    }
+
     companion object {
         fun from(json: JsonObject): Submission {
             val id = json.string("id")!!

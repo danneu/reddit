@@ -52,7 +52,7 @@ fun main(args: Array<String>) {
     val client = ApiClient()
 
     client.submissionsOf("futurology").forEach { submission ->
-        println("- ${submission.title}")
+        println(submission)
     }
 }
 ```
@@ -67,7 +67,7 @@ fun main(args: Array<String>) {
 
     client.submissionsOf("futurology").forEach { submission ->
         client.commentsOf(submission).forEach { comment ->
-            println("- ${comment.text.replace("\n", "").take(50)}\"")
+            println(comment)
         }
     }
 }
@@ -82,7 +82,7 @@ fun main(args: Array<String>) {
     val client = ApiClient()
 
     client.commentsOf("futurology").forEach { submission ->
-        println("- ${comment.text.replace("\n", "").take(50)}\"")
+        println(comment)
     }
 }
 ```
