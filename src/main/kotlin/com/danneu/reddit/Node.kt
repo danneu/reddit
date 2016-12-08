@@ -41,11 +41,9 @@ internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
                     // Drop first item since it's a duplicate of our last item
                     // TODO: Could maybe just drop the first childId in our MoreChildren request?
                     .apply { if (hasNext()) next() }
-
             } else {
                 val childrenIds = json.array<String>("children")!!
-                val nodes = apiClient.moreChildren(submission, childrenIds)
-                LazyIteratorChain.fromIterables(nodes)
+                apiClient.moreChildren(submission, childrenIds)
             }
         }
     }

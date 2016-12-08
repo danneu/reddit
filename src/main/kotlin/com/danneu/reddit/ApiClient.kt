@@ -50,8 +50,10 @@ class ApiClient(
     }
 
 
-    // submissionFullName: "t3_abc", children: ["abc", "def"]
-    fun moreChildren(submission: Submission, children: List<String>): List<Node> {
+    // children is a list of Id36
+    // submissionFullName, of course, should be a prefixed Id36
+    // e.g. submissionFullName: "t3_abc", children: ["abc", "def"]
+    fun moreChildren(submission: Submission, children: List<String>): Iterator<Comment> {
         val url = urlOf("https://api.reddit.com/api/morechildren", listOf(
             "api_type" to "json",
             "link_id" to submission.fullName(),
@@ -60,9 +62,10 @@ class ApiClient(
         ))
         println("[moreChildren] url = $url")
         val json = url.get(client).body().jsonObject()
-        return json.obj("json")!!.obj("data")!!.array<JsonObject>("things")!!.map { thing ->
+        val nodes = json.obj("json")!!.obj("data")!!.array<JsonObject>("things")!!.map { thing ->
             Node.fromThing(submission, thing, this)
         }
+        return LazyIteratorChain.fromIterables(nodes)
     }
 
 
