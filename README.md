@@ -1,5 +1,5 @@
 
-# com.danneu:reddit
+# reddit-iterator
 
 A Reddit crawler implemented in Kotlin for consuming submissions and comments with a flattened iterator.
 
