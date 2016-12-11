@@ -12,6 +12,9 @@ import okhttp3.ResponseBody
 import java.time.Duration
 
 
+// A junk-drawer of extensions and utilities.
+
+
 // HTTP HELPERS
 
 
@@ -54,6 +57,9 @@ fun ResponseBody.jsonObject(): JsonObject = json() as JsonObject
 // DURATION EXTENSIONS
 
 
+/**
+ * If a duration is outside of min..max bounds, then min or max is returned.
+ */
 fun Duration.clamp(min: Duration, max: Duration): Duration = when {
     this > max -> max
     this < min -> min
@@ -64,8 +70,10 @@ fun Duration.clamp(min: Duration, max: Duration): Duration = when {
 // JSON EXTENSIONS
 
 
-// Returns null instead of throwing if value is not a string.
-fun JsonObject.tryString(field: String): String? = try {
+/**
+ * Returns null instead of throwing if JSON field value is not a string.
+ */
+fun JsonObject.stringOrNull(field: String): String? = try {
     this.string(field)
 } catch(e: ClassCastException) {
     null

@@ -15,12 +15,17 @@ import java.time.Instant
 import java.net.Proxy
 
 
+/**
+ * A client that makes requests to the Reddit API.
+ *
+ * @property throttle How long the client will wait between each request.
+ * @property userAgent Reddit requires a user-agent, else the client will generate its own.
+ * @property proxy Proxy requests through an optional proxy server
+ */
 class ApiClient(
     val throttle: Duration,
     val userAgent: String,
-    val proxy: Proxy?,
-    // If you already know the offset, you can pass it in so the client can skip the fetch.
-    val utcOffset: Duration?
+    val proxy: Proxy?
 ) {
     val client: OkHttpClient = _sharedClient.newBuilder()
         .proxy(proxy ?: Proxy.NO_PROXY)
@@ -29,34 +34,38 @@ class ApiClient(
         .addInterceptor(Retry()) // this must be the final interceptor
         .build()
 
-    // When initialized without args, return default client
-    constructor(): this(Builder())
-
-    // Can also be initialized with lambda that gets passed to builder
-    constructor(block: Builder.() -> Unit): this(Builder().apply(block))
+    // Can be initialized with a lambda that gets passed to builder
+    constructor(block: Builder.() -> Unit = {}): this(Builder().apply(block))
 
     companion object {
         // All ApiClient instances share the same http client thread-pool
         val _sharedClient = OkHttpClient()
+
+        // The client used to fetch this when initializing, but I think I can just hard-code it here.
+        // TOOD: Figure out if it's reasonable to handle the case where Reddit's UTC offset changes in the future.
+        val utcOffset: Duration = Duration.ofHours(8)
     }
 
     private constructor(builder: Builder): this(
         builder.throttle,
         builder.userAgent,
-        builder.proxy,
-        builder.utcOffset
+        builder.proxy
     )
 
     ////////////////////////////////////////////////////////////
 
+    /**
+     * Create a new client based on the configuration of an existing one.
+     *
+     * @param block a lambda that gets applied to the client copy
+     * @return a new client
+     */
     fun fork(block: Builder.() -> Unit): ApiClient = Builder.from(this).apply(block).build()
 
     class Builder() {
         var throttle: Duration = Duration.ofMillis(1000)
         var userAgent: String = "com.danneu.reddit:0.0.1"
         var proxy: Proxy? = null
-        // If you already know the offset, you can pass it in so the client can skip the fetch.
-        var utcOffset: Duration? = null
 
         fun build() = ApiClient(this)
 
@@ -65,14 +74,23 @@ class ApiClient(
                 throttle = client.throttle
                 userAgent = client.userAgent
                 proxy = client.proxy
-                utcOffset = client.utcOffset
             }
         }
     }
 
     ////////////////////////////////////////////////////////////
 
+    /**
+     * Load a submission from the Reddit API.
+     *
+     * @param subreddit the subreddit name
+     * @param submissionId the submission's id36 or fullname
+     * @return the submission if one was found
+     */
     fun submissionAt(subreddit: String, submissionId: String): Submission? {
+        @Suppress("NAME_SHADOWING")
+        val submissionId = Thing.Prefix.strip(submissionId)
+
         val url = urlOf("https://api.reddit.com/r/$subreddit/comments/$submissionId", listOf(
             "limit" to 1,
             "depth" to 1
@@ -84,7 +102,19 @@ class ApiClient(
         return Submission.from(json)
     }
 
+    /**
+     * Crawl the comments of a submission depth-first.
+     *
+     * @param subreddit the subreddit name
+     * @param submissionId the submission's id36 or fullname
+     * @param commentId optionally target a specific comment tree, else it crawls all trees
+     * @param limit how many comments to fetch
+     * @return a flattened iteration of all its comments
+     */
     fun commentsOf(subreddit: String, submissionId: String, commentId: String? = null, limit: Int = 100): Iterator<Comment> {
+        @Suppress("NAME_SHADOWING")
+        val submissionId = Thing.Prefix.strip(submissionId)
+
         val base = "https://api.reddit.com/r/$subreddit/comments/$submissionId" +
             if (commentId == null) "" else "//$commentId"
         val url = urlOf(base, listOf(
@@ -101,15 +131,21 @@ class ApiClient(
     }
 
 
-    // Convenience API
+    /**
+     * Convenience method for crawling a submission's comments when you have a submission instance.
+     */
     fun commentsOf(submission: Submission, commentId: String? = null, limit: Int = 100): Iterator<Comment> {
         return commentsOf(submission.subredditName, submission.id, commentId, limit)
     }
 
 
-    // children is a list of Id36
-    // submissionFullName, of course, should be a prefixed Id36
-    // e.g. submissionFullName: "t3_abc", children: ["abc", "def"]
+    /**
+     * Paginates a "Load More" or "Continue Thread" comment node.
+     *
+     * @param submission the submission
+     * @param children a list of comment id36s
+     * @return a comment iterator
+     */
     fun moreChildren(submission: Submission, children: List<String>): Iterator<Comment> {
         val url = urlOf("https://api.reddit.com/api/morechildren", listOf(
             "api_type" to "json",
@@ -126,6 +162,13 @@ class ApiClient(
     }
 
 
+    /**
+     * Paginates the latest 1,000+ comments made on reddit across all subreddits.
+     *
+     * @param limit how many comments to fetch each request (max: 100)
+     * @param crawl whether to continue paginating after the first page or stop after one request
+     * @return a comment iterator
+     */
     fun recentComments(limit: Int = 100, crawl: Boolean = true): Iterator<Comment> {
         var after: String? = null
         val buffer = mutableListOf<Comment>()
@@ -178,11 +221,13 @@ class ApiClient(
     }
 
 
-    // grabs the latest comment to determine reddit's offset from UTC.
-    //
-    // i.e. this is the duration you must add to a UTC timestamp to get reddit's server time.
-    // for instance, reddit's cloudsearch api watns timestamps in reddit's time rather than utc, so
-    // you can use this offset to do the conversion.
+    /**
+     * Makes a request to determine Reddit's offset from UTC.
+     *
+     * i.e. The amount of time you must add to a UTC timestamp to get reddit's server time.
+     * The cloudsearch API wants timestamps with Reddit's offset time rather than UTC, so we
+     * add this offset to our timestamps before making cloudsearch requests.
+     */
     fun fetchUtcOffset(): Duration {
         val iterator = recentComments(limit = 1, crawl = false)
 
@@ -194,13 +239,29 @@ class ApiClient(
     }
 
 
+    /**
+     * Represents a paginated API result.
+     *
+     * `after` is an ID36. If it's null, then there are no more pages after this one.
+     */
     interface Page<out T> {
-        // when after is null, no more pages
         val after: String?
         val data: List<T>
     }
 
 
+    /**
+     * Makes a cloudsearch API request.
+     *
+     * The cloudsearch (Lucene) API is necessary since Reddit's paginated APIs only return up to 1,000 results.
+     * It's going to fetch all submissions created between {max - interval} and {max}.
+     *
+     * @param subredditName the subreddit name
+     * @param max the reddit-offset timestamp upper bound
+     * @param interval the amount of time subtract from `max` to get the lower bound
+     * @param after request the page after the given submission id36, else start from the first page
+     * @return a page of submissions that may point to a following page
+     */
     fun cloudSearch(subredditName: String, max: Instant, interval: Duration, after: String? = null): Page<Submission> {
         // ensure min is never negative
         val min = listOf(max.minus(interval), Instant.EPOCH).max()!!
@@ -225,9 +286,20 @@ class ApiClient(
     }
 
 
+    /**
+     * Crawl the submissions of a subreddit, attempting to hover at about one page of results per request.
+     *
+     * It requests all submissions between {max - interval} and {max}. If 0-50 results are found in that interval
+     * (0 to half a page), then the interval is expanded. If more than one page of results are found (over 100),
+     * then the interval is decayed. It then sets max to the previous request's lower bound and makes the next
+     * request. It repeats this process until it has iterated back one year.
+     *
+     * @param subredditName the name of the subreddit
+     * @param interval the min..max interval for the initial request
+     * @return an interation of submissions
+     */
     fun submissionsOf(subredditName: String, interval: Duration = Duration.ofMinutes(15)): Iterator<Submission> {
-        val offset = utcOffset ?: fetchUtcOffset()
-        var max = Instant.now().plus(offset)
+        var max = Instant.now().plus(utcOffset)
         val buffer = mutableListOf<Submission>()
         var after: String? = null
 
@@ -292,8 +364,8 @@ class ApiClient(
 
 
 fun main(args: Array<String>) {
-    val offset = ApiClient().fetchUtcOffset()
-    println("offset = ${offset.toHours()} hours")
+//    val offset = ApiClient().fetchUtcOffset()
+//    println("offset = ${offset.toHours()} hours")
 
     ApiClient().recentComments().forEach { comment ->
         println(comment)

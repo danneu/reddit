@@ -6,9 +6,11 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.time.Duration
 
-// If the request fails, keep retrying.
-//
-// Must go at end of interceptor chain
+/**
+ * If the request fails (e.g. connection timeout), then keep retrying after waiting some duration.
+ *
+ * Note: Must go at the end of the interceptor chain.
+ */
 class Retry(val sleep: Duration = Duration.ofMillis(5000)) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()

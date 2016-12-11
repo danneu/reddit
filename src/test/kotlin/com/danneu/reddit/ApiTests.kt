@@ -51,10 +51,17 @@ class ApiTests {
     }
 
     @Test
-    fun testSubmissionAt() {
+    fun testSubmissionAtWithId36() {
         // https://www.reddit.com/r/testfixtures/comments/5h8934/urls/
         val submission = ApiClient().submissionAt("testfixtures", "5h8934")
-        assertEquals("should fetch individual submission", "urls", submission?.title())
+        assertEquals("should fetch individual submission when given its id36", "urls", submission?.title())
+    }
+
+    @Test
+    fun testSubmissionAtWithFullname() {
+        // https://www.reddit.com/r/testfixtures/comments/5h8934/urls/
+        val submission = ApiClient().submissionAt("testfixtures", "t3_5h8934")
+        assertEquals("should fetch individual submission when given its fullname", "urls", submission?.title())
     }
 
     @Test

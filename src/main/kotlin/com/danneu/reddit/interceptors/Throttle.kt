@@ -6,7 +6,11 @@ import okhttp3.Response
 import java.time.Duration
 
 
-// Reddit's API requires a throttle of one req/second.
+/**
+ * Ensures that a duration has elapsed before the previous request made by this client.
+ *
+ * Reddit's API requires a throttle of one request per second.
+ */
 class Throttle(val duration: Duration) : Interceptor {
     private var lastRequestAt: Long = 0
 

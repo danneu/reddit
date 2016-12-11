@@ -5,7 +5,12 @@ import okhttp3.Interceptor.Chain
 import okhttp3.Response
 
 
-// Reddit's API requires a user-agent, so this ensures that one is set even if user removes it.
+/**
+ * If a request does not have a user-agent header, the provided default user-agent value is set before
+ * the request is sent.
+ *
+ * Reddit's API requires a user-agent.
+ */
 internal class EnsureUserAgent(val defaultUserAgent: String) : Interceptor {
     override fun intercept(chain: Chain): Response {
         var request = chain.request()

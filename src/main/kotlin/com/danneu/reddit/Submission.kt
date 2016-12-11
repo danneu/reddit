@@ -21,6 +21,9 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
     }
 
     companion object {
+        /**
+         * Instantiate Submission from a JSON string from Reddit's API
+         */
         fun from(json: JsonObject): Submission {
             val id = json.string("id")!!
             val subredditName = json.string("subreddit")!!

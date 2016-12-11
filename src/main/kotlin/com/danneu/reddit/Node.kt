@@ -9,14 +9,23 @@ import com.google.common.collect.Iterators
 import java.util.Collections
 
 
-// A submission's comments are a list of comment trees that may have any number of "load more" nodes
-// which will be paginated lazily.
+/**
+ * Represents the two types of comment trees you find when enumerating a submission's comments.
+ *
+ * Nodes can product a flattened iteration of their nested comments which lazy-load any encountered More nodes
+ * as the iterator is consumed.
+ */
 internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
-    // kind == t1
+    /**
+     * A single comment.
+     *
+     * Has 0+ replies (each reply being a CommentTree or More node).
+     */
+    // kind == "t1"
     class CommentTree(val submission: Submission, val json: JsonObject, apiClient: ApiClient) : Node(apiClient) {
         override fun iterator(): Iterator<Comment> {
             val iterator1 = Iterators.singletonIterator(Comment(json, submission.title()))
-            val iterator2 = if (json.tryString("replies")?.isEmpty() ?: false) {
+            val iterator2 = if (json.stringOrNull("replies")?.isEmpty() ?: false) {
                 Collections.emptyIterator<Comment>()
             } else {
                 val nodes = json.obj("replies")!!.obj("data")!!.array<JsonObject>("children")!!.map { thing ->
@@ -29,7 +38,11 @@ internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
         }
     }
 
-    // kind == more
+    /**
+     * Represents a "Load More" or "Continue Thread" node which requires an API request
+     * to be unrolled into additional nodes.
+     */
+    // kind == "more"
     class More(val submission: Submission, val json: JsonObject, apiClient: ApiClient) : Node(apiClient) {
         fun count(): Int = json.int("count")!!
         fun parentId(): String = json.string("parent_id")!!
@@ -49,9 +62,11 @@ internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
     }
 
     companion object {
-        // a thing is the data envelope: { kind, data }
-        // a node only wraps around the `data` object.
-        // the thing envelope is only used to figure out which node to instantiate.
+        /**
+         * A Thing is the data envelope that wraps the entities we care about: { kind: "t1" | "more", data: JsonObject }
+         *
+         * A Node wraps around the `data` part. The `kind` is only used to figure out which Node type to instantiate.
+         */
         fun fromThing(submission: Submission, json: JsonObject, apiClient: ApiClient): Node {
             val kind = json.string("kind")!!
             val data = json.obj("data")!!

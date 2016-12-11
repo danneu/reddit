@@ -22,6 +22,9 @@ class Comment(val json: JsonObject, val submissionTitle: String) : Thing(Thing.P
     }
 
     companion object {
+        /**
+         * Instantiate Comment from a JSON string from Reddit's API
+         */
         fun from(submissionTitle: String, json: JsonObject): Comment {
             return Comment(json, submissionTitle)
         }
