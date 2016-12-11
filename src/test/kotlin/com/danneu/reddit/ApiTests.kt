@@ -45,7 +45,7 @@ class ApiTests {
         // should end after one request
         val submissions = ApiClient().submissionsOf("testfixtures", interval = interval).asSequence().toList()
         assertEquals("fetches all submissions on page 1 newest to oldest",
-            listOf("5h8934", "5gdnin", "5gdn73", "5g3272"),
+            listOf("5hnm01", "5h8934", "5gdnin", "5gdn73", "5g3272"),
             submissions.map { it.id }
         )
     }

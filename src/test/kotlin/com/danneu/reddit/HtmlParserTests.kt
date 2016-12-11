@@ -21,4 +21,20 @@ class HtmlParserTests {
             "ignores relative urls",
             listOf(URI("https://www.reddit.com/r/Futurology")), HtmlParser.urls(html))
     }
+
+    @Test
+    fun testIpAddressUrls() {
+        val html = """
+            <div>
+                <a href="https://1.2.3.4/foo"></a>
+                <a href="9.9.9.9"></a>
+            </div>
+        """
+
+        assertEquals("parses absolute ip address urls",
+            listOf(
+                URI("https://1.2.3.4/foo")
+            ),
+            HtmlParser.urls(html))
+    }
 }
