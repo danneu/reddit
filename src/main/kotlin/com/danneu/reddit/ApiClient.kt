@@ -38,12 +38,21 @@ class ApiClient(
     constructor(block: Builder.() -> Unit = {}): this(Builder().apply(block))
 
     companion object {
-        // All ApiClient instances share the same http client thread-pool
-        val _sharedClient = OkHttpClient()
+        /**
+         * The http client shared across all ApiClient instances so that they all use the same http client thread-pool.
+         */
+        private val _sharedClient = OkHttpClient()
 
-        // The client used to fetch this when initializing, but I think I can just hard-code it here.
-        // TOOD: Figure out if it's reasonable to handle the case where Reddit's UTC offset changes in the future.
-        val utcOffset: Duration = Duration.ofHours(8)
+        /**
+         * Reddit's UTC offset.
+         *
+         * i.e. This is the duration that must be added to a UTC timestamp to get the Reddit's timestamp,
+         * like the timestamp is will send to the cloudsearch API.
+         *
+         * TODO: The client used to fetch this, but I'm pretty sure I can just hard-code it. Can it change?
+         *
+         */
+        private val utcOffset: Duration = Duration.ofHours(8)
     }
 
     private constructor(builder: Builder): this(

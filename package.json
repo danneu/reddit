@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "__docs:gen": "java -jar dokka-fatjar.jar src",
+    "docs:gen": "./gradlew dokka",
+    "docs:serve": "pushd out/doc; python -m SimpleHTTPServer 5000; popd",
+    "docs:genserve": "npm run docs:gen && npm run docs:serve"
+  }
+}

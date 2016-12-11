@@ -28,8 +28,9 @@ import java.util.Collections
  * comments until all of the LoadMore nodes had loaded.
  */
 abstract class LazyIteratorChain<T>: Iterator<T> {
-    var currIter: Iterator<T> = Collections.emptyIterator()
-    var count = 0
+    private var currIter: Iterator<T> = Collections.emptyIterator()
+
+    private var count = 0
 
     /**
      * Produce the next iterator in the chain.
@@ -41,6 +42,9 @@ abstract class LazyIteratorChain<T>: Iterator<T> {
      */
     abstract fun nextIterator(count: Int): Iterator<T>?
 
+    /**
+     * Returns true until all of the chained iterators have been exhausted.
+     */
     override fun hasNext(): Boolean {
         while (true) {
             if (currIter.hasNext()) return true
@@ -48,6 +52,9 @@ abstract class LazyIteratorChain<T>: Iterator<T> {
         }
     }
 
+    /**
+     * Gets the next item of the current iterator in the chain.
+     */
     override fun next(): T = currIter.next()
 
     companion object {

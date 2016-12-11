@@ -5,11 +5,25 @@ import com.beust.klaxon.string
 import java.net.URI
 
 
+/**
+ * Represents a Submission entity from Reddit's API.
+ */
 class Submission(val json: JsonObject, val subredditName: String, override val id: String) : Thing(Thing.Prefix.Link) {
+    /**
+     * Permalink of the submission
+     */
     override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
 
+    /**
+     * The user-created title of the submission
+     */
     fun title(): String = json.string("title")!!
 
+    /**
+     * List of absolute urls linked from the submission OP.
+     *
+     * If submission is not a self-post, then the list is empty.
+     */
     fun urls(): List<URI> {
         // selftext is always a string, selftext_html is string | null.
         val html = json.string("selftext_html") ?: return emptyList()
