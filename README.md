@@ -125,3 +125,32 @@ fun main(args: Array<String>) {
 
 `client2` uses the same proxy as `client1`, but it waits two seconds before each request instead of the
 default one second.
+
+## Examples
+
+### Extract all absolute URLs from submissions and comments
+
+``` kotlin
+import com.danneu.reddit.ApiClient
+import com.danneu.reddit.HasContent
+import java.net.URI
+
+// Extend Submissions and Comments with a method that returns only the absolute URLs
+fun HasContent.absoluteUrls(): List<URI> = urls().filter { it.isAbsolute }
+
+fun processUrl(uri: URI) = println("found absolute url: ${uri}")
+
+fun main(args: Array<String>) {
+    val client = ApiClient()
+
+    client.submissionsOf("futurology").forEach { submission ->
+        // Process URLs in the submission body
+        submission.absoluteUrls().forEach(::processUrl)
+
+        client.commentsOf(submission).forEach { comment ->
+            // Process URLs in each comment body
+            comment.absoluteUrls().forEach(::processUrl)
+        }
+    }
+}
+```
