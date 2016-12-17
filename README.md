@@ -154,3 +154,29 @@ fun main(args: Array<String>) {
     }
 }
 ```
+
+Even better, we can rewrite the previous example with a client extension `#urlsOf(subreddit)` that returns
+a lazy sequence of urls found in the submission and comment bodies.
+
+``` kotlin
+import com.danneu.reddit.ApiClient
+import java.net.URI
+
+fun ApiClient.urlsOf(subreddit: String): Sequence<URI> {
+    return submissionsOf(subreddit).asSequence().flatMap { submission ->
+        submission.urls().asSequence().plus(
+            commentsOf(submission).asSequence().flatMap { comment ->
+                comment.urls().asSequence()
+            }
+        )
+    }
+}
+
+fun main(args: Array<String>) {
+    val client = ApiClient()
+
+    client.urlsOf("futurology").filter { it.isAbsolute }.forEach { url ->
+        println("found absolute url: $url")
+    }
+}
+```

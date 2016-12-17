@@ -3,7 +3,6 @@ package com.danneu.reddit
 
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.array
-import com.beust.klaxon.long
 import com.beust.klaxon.obj
 import com.beust.klaxon.string
 import com.danneu.reddit.interceptors.EnsureUserAgent
@@ -375,9 +374,9 @@ fun main(args: Array<String>) {
 //    val offset = ApiClient().fetchUtcOffset()
 //    println("offset = ${offset.toHours()} hours")
 
-    ApiClient().recentComments().forEach { comment ->
-        println(comment)
-    }
+//    ApiClient().recentComments().forEach { comment ->
+//        println(comment)
+//    }
 
 //    ApiClient().submissionsOf("testfixtures", interval = Duration.ofDays(150)).forEach { submission ->
 //        println("- ${submission.id} ${submission.title()}")

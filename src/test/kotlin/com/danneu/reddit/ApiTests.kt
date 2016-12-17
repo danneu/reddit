@@ -96,6 +96,39 @@ class ApiTests {
     @Test
     fun testSubmissionLinks() {
         val urls = ApiClient().submissionsOf("testfixtures", interval = Duration.ofDays(400)).asSequence().flatMap { it.urls().asSequence() }.toList()
-        assertEquals("parses submission links", listOf(URI("https://amzn.com/1491931655")), urls)
+        assertEquals("parses submission links",
+            listOf(
+                URI("https://example.com/op"),
+                URI("https://amzn.com/1491931655")
+            ),
+            urls
+        )
+    }
+
+
+    // CUSTOM API CLIENT EXTENSIONS
+
+
+    @Test
+    fun testCustomUrlsOf() {
+        fun ApiClient.urlsOf(subreddit: String, interval: Duration): Sequence<URI> {
+            return submissionsOf(subreddit, interval = interval).asSequence().flatMap { submission ->
+                submission.urls().asSequence().plus(
+                    commentsOf(submission).asSequence().flatMap { comment ->
+                        comment.urls().asSequence()
+                    }
+                )
+            }
+        }
+
+        val urls = ApiClient().urlsOf("testfixtures", interval = Duration.ofDays(400)).toList()
+        assertEquals("finds absolute urls",
+            listOf(
+                URI("https://example.com/op"),
+                URI("https://example.com/"),
+                URI("https://amzn.com/1491931655")
+            ),
+            urls
+        )
     }
 }
