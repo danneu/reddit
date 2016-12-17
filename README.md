@@ -15,7 +15,18 @@ with Reddit's API requirements.
 
 ## Install
 
-TODO
+``` groovy
+repositories {
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    // Always get latest:
+    compile "com.danneu:reddit:master-SNAPSHOT"
+    // Or get a specific release:
+    compile "com.danneu:reddit:0.0.1" (no releases are published yet)
+}
+```
 
 ## Usage
 
