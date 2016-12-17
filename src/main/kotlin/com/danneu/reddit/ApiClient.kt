@@ -144,7 +144,7 @@ class ApiClient(
      * Convenience method for crawling a submission's comments when you have a submission instance.
      */
     fun commentsOf(submission: Submission, commentId: String? = null, limit: Int = 100): Iterator<Comment> {
-        return commentsOf(submission.subredditName, submission.id, commentId, limit)
+        return commentsOf(submission.subredditName, submission.id(), commentId, limit)
     }
 
 
@@ -243,8 +243,7 @@ class ApiClient(
         // TODO: do something real
         if (!iterator.hasNext()) throw RuntimeException("weird, reddit api returned no results")
 
-        val json = iterator.next().json
-        return Duration.ofSeconds(json.long("created")!! - json.long("created_utc")!!)
+        return iterator.next().utcOffset()
     }
 
 

@@ -50,7 +50,7 @@ internal sealed class Node(val apiClient: ApiClient) : Iterable<Comment> {
         override fun iterator(): Iterator<Comment> {
             return if (count() == 0) {
                 val commentId = Thing.Prefix.strip(parentId()) // t1_abc -> abc
-                apiClient.commentsOf(submission.subredditName, submissionId = submission.id, commentId = commentId)
+                apiClient.commentsOf(submission.subredditName, submissionId = submission.id(), commentId = commentId)
                     // Drop first item since it's a duplicate of our last item
                     // TODO: Could maybe just drop the first childId in our MoreChildren request?
                     .apply { if (hasNext()) next() }

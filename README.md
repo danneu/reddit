@@ -78,10 +78,8 @@ import com.danneu.reddit.ApiClient
 fun main(args: Array<String>) {
     val client = ApiClient()
 
-    client.submissionsOf("futurology").forEach { submission ->
-        client.commentsOf(submission).forEach { comment ->
-            println(comment)
-        }
+    client.commentsOf("futurology").forEach { comment ->
+        println(comment)
     }
 }
 ```
@@ -94,8 +92,11 @@ import com.danneu.reddit.ApiClient
 fun main(args: Array<String>) {
     val client = ApiClient()
 
-    client.commentsOf("futurology").forEach { comment ->
-        println(comment)
+    client.submissionsOf("futurology").forEach { submission ->
+        println("Now crawling: ${submission.url()}")
+        client.commentsOf(submission).forEach { comment ->
+            println(comment)
+        }
     }
 }
 ```
@@ -107,9 +108,9 @@ lambda to customize the copy.
 
 ``` kotlin
 import com.danneu.reddit.ApiClient
-import java.net.Proxy
-import java.time.Duration
 import java.net.InetSocketAddress
+import java.time.Duration
+import java.net.Proxy
 
 fun main(args: Array<String>) {
     val client1 = ApiClient {

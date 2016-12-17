@@ -1,37 +1,57 @@
 package com.danneu.reddit
 
 import com.beust.klaxon.JsonObject
+import com.beust.klaxon.boolean
+import com.beust.klaxon.int
 import com.beust.klaxon.string
-import java.net.URI
 
 
 /**
  * Represents a Submission entity from Reddit's API.
  */
-class Submission(val json: JsonObject, val subredditName: String, override val id: String) : Thing(Thing.Prefix.Link) {
-    /**
-     * Permalink of the submission
-     */
-    override fun url() = "https://www.reddit.com/r/$subredditName/comments/$id"
-
+class Submission(override val json: JsonObject, val subredditName: String) : Thing(Thing.Prefix.Link), HasContent, HasScore {
     /**
      * The user-created title of the submission
      */
     fun title(): String = json.string("title")!!
 
     /**
-     * List of absolute urls linked from the submission OP.
-     *
-     * If submission is not a self-post, then the list is empty.
+     * Is the submission stickied to the top of its subreddit?
      */
-    fun urls(): List<URI> {
-        // selftext is always a string, selftext_html is string | null.
-        val html = json.string("selftext_html") ?: return emptyList()
-        return HtmlParser.urls(html)
-    }
+    fun stickied(): Boolean = json.boolean("stickied")!!
+
+    /**
+     * Username of the redditor that created the thing.
+     */
+    fun author(): String = json.string("author")!!
+
+    /**
+     * Submission is a self-post rather than a link elsewhere.
+     */
+    fun isSelf(): Boolean = json.boolean("is_self")!!
+
+    // THING
+
+    /**
+     * Permalink of the submission
+     */
+    override fun url() = "https://www.reddit.com/r/$subredditName/comments/${id()}"
+
+    // CONTENT
+
+    // Note: selftext is always a string, though blank if submission is not a selfpost
+    override fun text(): String = json.string("selftext")?.trim() ?: ""
+    // Note: selftext_html is a nullable string unlike selftext
+    override fun html(): String = json.string("selftext_html") ?: ""
+
+    // SCORE
+
+    override fun ups(): Int = json.int("ups")!!
+    override fun downs(): Int = json.int("downs")!!
+    override fun score(): Int = json.int("score")!!
 
     override fun toString(): String {
-        return "Submission{id = $id, url = ${url()}, title=\"${title()}\""
+        return "Submission{id = ${id()}, url = ${url()}, title=\"${title()}\""
     }
 
     companion object {
@@ -39,9 +59,8 @@ class Submission(val json: JsonObject, val subredditName: String, override val i
          * Instantiate Submission from a JSON string from Reddit's API
          */
         fun from(json: JsonObject): Submission {
-            val id = json.string("id")!!
             val subredditName = json.string("subreddit")!!
-            return Submission(json, subredditName, id)
+            return Submission(json, subredditName)
         }
     }
 }
