@@ -50,6 +50,10 @@ fun main(args: Array<String>) {
 }
 ```
 
+However, if you run this 24/7 in a loop, you can consume all Reddit comments as they are published.
+
+You'll need to use the following subreddit-scoped methods to consume historical comments.
+
 ### Crawl all submissions in a subreddit
 
 ``` kotlin
@@ -90,7 +94,7 @@ import com.danneu.reddit.ApiClient
 fun main(args: Array<String>) {
     val client = ApiClient()
 
-    client.commentsOf("futurology").forEach { submission ->
+    client.commentsOf("futurology").forEach { comment ->
         println(comment)
     }
 }
