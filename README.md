@@ -23,10 +23,12 @@ repositories {
 dependencies {
     // Always get latest:
     compile "com.danneu:reddit:master-SNAPSHOT"
-    // Or get a specific release:
+    // Or get a specific GitHub release:
     compile "com.danneu:reddit:0.0.1"
 }
 ```
+
+You can see all releases here: https://github.com/danneu/reddit/releases
 
 ## Usage
 
