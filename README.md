@@ -24,7 +24,7 @@ dependencies {
     // Always get latest:
     compile "com.danneu:reddit:master-SNAPSHOT"
     // Or get a specific release:
-    compile "com.danneu:reddit:0.0.1" (no releases are published yet)
+    compile "com.danneu:reddit:0.0.1"
 }
 ```
 
@@ -155,7 +155,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-Even better, we can rewrite the previous example with a client extension `#urlsOf(subreddit)` that returns
+Even better, in Kotlin, we can rewrite the previous example with a client extension `#urlsOf(subreddit)` that returns
 a lazy sequence of urls found in the submission and comment bodies.
 
 ``` kotlin
