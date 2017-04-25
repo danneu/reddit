@@ -1,5 +1,5 @@
 
-# reddit-iterator [![Jitpack](https://jitpack.io/v/com.danneu/reddit.svg)] (https://jitpack.io/#com.danneu/reddit) [![Build Status](https://travis-ci.org/danneu/reddit-iterator.svg?branch=master)](https://travis-ci.org/danneu/reddit-iterator)
+# reddit-iterator [![Jitpack](https://jitpack.io/v/com.danneu/reddit.svg)](https://jitpack.io/#com.danneu/reddit) [![Build Status](https://travis-ci.org/danneu/reddit.svg?branch=master)](https://travis-ci.org/danneu/reddit)
 
 A Reddit crawler implemented in Kotlin for consuming submissions and comments with a flattened iterator.
 
