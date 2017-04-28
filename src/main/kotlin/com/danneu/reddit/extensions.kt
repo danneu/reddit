@@ -4,6 +4,7 @@ import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import com.beust.klaxon.string
+import okhttp3.FormBody
 import org.apache.http.client.utils.URIBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -35,6 +36,19 @@ fun String.get(client: OkHttpClient): Response {
         .url(this)
         .addHeader("Accept", "application/json")
         .addHeader("Content-Type", "application/json")
+        .build()
+    return client.newCall(request).execute()
+}
+
+
+fun String.postForm(client: OkHttpClient, form: Map<String, String> = emptyMap()): Response {
+    val body = FormBody.Builder().apply {
+        form.forEach { k, v -> this.add(k, v) }
+    }.build()
+    val request = Request.Builder()
+        .url(this)
+        .addHeader("Accept", "application/json")
+        .post(body)
         .build()
     return client.newCall(request).execute()
 }

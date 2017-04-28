@@ -155,14 +155,13 @@ class ApiClient(
      * @return a comment iterator
      */
     fun moreChildren(submission: Submission, children: List<String>): Iterator<Comment> {
-        val url = urlOf("https://api.reddit.com/api/morechildren", listOf(
+        val url = urlOf("https://api.reddit.com/api/morechildren")
+        println("[moreChildren] url = $url")
+        val json = url.postForm(client, mapOf(
             "api_type" to "json",
             "link_id" to submission.fullName(),
             "children" to children.joinToString(",")
-
-        ))
-        println("[moreChildren] url = $url")
-        val json = url.get(client).body().jsonObject()
+        )).body().jsonObject()
         val nodes = json.obj("json")!!.obj("data")!!.array<JsonObject>("things")!!.map { thing ->
             Node.fromThing(submission, thing, this)
         }
